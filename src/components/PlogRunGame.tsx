@@ -5,8 +5,8 @@ import { Play, RotateCcw, Trophy, Trash2 } from 'lucide-react';
 const getGameDimensions = () => {
   const isMobile = window.innerWidth < 768;
   return {
-    width: isMobile ? Math.min(360, window.innerWidth - 10) : 500,
-    height: 500,
+    width: isMobile ? Math.min(360, window.innerWidth - 20) : 600,
+    height: isMobile ? 400 : 500,
   };
 };
 
@@ -335,29 +335,33 @@ const PlogRunGame: React.FC = () => {
     if (!gameArea) return;
 
     const handleTouchStart = (e: TouchEvent) => {
-      e.preventDefault();
+      if (e.cancelable) {
+        e.preventDefault();
+      }
       e.stopPropagation();
       const touch = e.touches[0];
       touchStartRef.current = { x: touch.clientX, y: touch.clientY };
     };
 
     const handleTouchMove = (e: TouchEvent) => {
-      e.preventDefault();
+      if (e.cancelable) {
+        e.preventDefault();
+      }
       e.stopPropagation();
       if (!touchStartRef.current || !gameState.isPlaying) return;
 
       const touch = e.touches[0];
       const deltaX = touch.clientX - touchStartRef.current.x;
 
-      if (Math.abs(deltaX) > 5) { // More sensitive for mobile
+      if (Math.abs(deltaX) > 3) { // More sensitive for mobile
         setGameState((prev) => {
           let newX = prev.dustbinX;
           if (deltaX < 0) {
-            newX = Math.max(0, prev.dustbinX - DUSTBIN_SPEED * 2);
+            newX = Math.max(0, prev.dustbinX - DUSTBIN_SPEED * 1.5);
           } else {
             newX = Math.min(
               gameDimensions.width - DUSTBIN_WIDTH,
-              prev.dustbinX + DUSTBIN_SPEED * 2
+              prev.dustbinX + DUSTBIN_SPEED * 1.5
             );
           }
           return { ...prev, dustbinX: newX };
@@ -367,21 +371,47 @@ const PlogRunGame: React.FC = () => {
     };
 
     const handleTouchEnd = (e: TouchEvent) => {
-      e.preventDefault();
+      if (e.cancelable) {
+        e.preventDefault();
+      }
       e.stopPropagation();
       touchStartRef.current = null;
     };
 
-    gameArea.addEventListener('touchstart', handleTouchStart, {
-      passive: false,
-    });
+    // Add touch event listeners with proper options for embedded environments
+    gameArea.addEventListener('touchstart', handleTouchStart, { passive: false });
     gameArea.addEventListener('touchmove', handleTouchMove, { passive: false });
     gameArea.addEventListener('touchend', handleTouchEnd, { passive: false });
+    
+    // Also add click handlers as fallback for embedded environments
+    const handleClick = (e: MouseEvent) => {
+      if (!gameState.isPlaying) return;
+      
+      const rect = gameArea.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const centerX = gameDimensions.width / 2;
+      
+      setGameState((prev) => {
+        let newX = prev.dustbinX;
+        if (clickX < centerX) {
+          newX = Math.max(0, prev.dustbinX - DUSTBIN_SPEED * 3);
+        } else {
+          newX = Math.min(
+            gameDimensions.width - DUSTBIN_WIDTH,
+            prev.dustbinX + DUSTBIN_SPEED * 3
+          );
+        }
+        return { ...prev, dustbinX: newX };
+      });
+    };
+    
+    gameArea.addEventListener('click', handleClick);
 
     return () => {
       gameArea.removeEventListener('touchstart', handleTouchStart);
       gameArea.removeEventListener('touchmove', handleTouchMove);
       gameArea.removeEventListener('touchend', handleTouchEnd);
+      gameArea.removeEventListener('click', handleClick);
     };
   }, [gameState.isPlaying, gameDimensions.width]);
 
@@ -401,9 +431,9 @@ const PlogRunGame: React.FC = () => {
   const speedLevel = Math.floor(gameState.score / SPEED_INCREASE_INTERVAL) + 1;
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-blue-300 via-green-200 to-green-400 p-2 sm:p-4">
+    <div className="flex flex-col items-center justify-center p-2 sm:p-4">
       <div
-        className="bg-white rounded-xl sm:rounded-2xl shadow-2xl overflow-hidden border border-green-200 w-full max-w-md sm:max-w-none"
+        className="bg-white rounded-lg shadow-xl overflow-hidden border border-gray-200 w-full max-w-none"
         style={{ width: gameDimensions.width }}
       >
         {/* Header */}
