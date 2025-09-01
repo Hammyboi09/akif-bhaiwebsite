@@ -6,7 +6,7 @@ const getGameDimensions = () => {
   const isMobile = window.innerWidth < 768;
   return {
     width: isMobile ? Math.min(360, window.innerWidth - 10) : 500,
-    height: isMobile ? Math.min(580, window.innerHeight - 120) : 700,
+    height: 500,
   };
 };
 
@@ -514,6 +514,7 @@ const PlogRunGame: React.FC = () => {
                   transform: `rotate(${waste.rotation}deg)`,
                   filter: 'drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6))',
                 }}
+
               >
                 <img
                   src={waste.image}
