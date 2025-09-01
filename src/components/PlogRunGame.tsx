@@ -272,27 +272,24 @@ const PlogRunGame: React.FC = () => {
   }, [highScore, gameDimensions.width, gameDimensions.height, getCurrentSpeed]);
 
   const gameLoop = useCallback(() => {
-    if (!gameState.isPlaying || gameState.gameOver) return;
-
     updateGame();
     spawnWaste();
-
-    // keep looping
     animationFrameRef.current = requestAnimationFrame(gameLoop);
-  }, [gameState.isPlaying, gameState.gameOver, updateGame, spawnWaste]);
+  }, [updateGame, spawnWaste]);
 
   const startGame = useCallback(() => {
-    setGameState((prev) => ({
-      ...prev,
-      isPlaying: true,
+    setGameState({
+      dustbinX: gameDimensions.width / 2 - DUSTBIN_WIDTH / 2,
+      wasteItems: [],
       score: 0,
-      missed: 0,
       gameOver: false,
-    }));
-
-    // start the animation loop here
-    animationFrameRef.current = requestAnimationFrame(gameLoop);
-  }, [gameLoop]);
+      isPlaying: true,
+      gameStarted: true,
+      currentSpeed: BASE_WASTE_FALL_SPEED,
+    });
+    lastWasteSpawn.current = Date.now();
+    keysPressed.current.clear();
+  }, [gameDimensions.width]);
 
   const resetGame = useCallback(() => {
     if (animationFrameRef.current) {
@@ -418,6 +415,19 @@ const PlogRunGame: React.FC = () => {
     };
   }, [gameState.isPlaying, gameDimensions.width]);
 
+  // Game loop
+  useEffect(() => {
+    if (gameState.isPlaying && !gameState.gameOver) {
+      animationFrameRef.current = requestAnimationFrame(gameLoop);
+    }
+
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [gameState.isPlaying, gameState.gameOver, gameLoop]);
+
   const speedLevel = Math.floor(gameState.score / SPEED_INCREASE_INTERVAL) + 1;
 
   return (
@@ -534,6 +544,7 @@ const PlogRunGame: React.FC = () => {
                   transform: `rotate(${waste.rotation}deg)`,
                   filter: 'drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6))',
                 }}
+
               >
                 <img
                   src={waste.image}
@@ -632,3 +643,5 @@ const PlogRunGame: React.FC = () => {
 };
 
 export default PlogRunGame;
+
+
