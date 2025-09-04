@@ -335,62 +335,61 @@ const PlogRunGame: React.FC = () => {
     if (!gameArea) return;
 
     const handleTouchStart = (e: TouchEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
+      if (!gameState.isPlaying) return;
+      
       const touch = e.touches[0];
-      touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+      const rect = gameArea.getBoundingClientRect();
+      touchStartRef.current = { 
+        x: touch.clientX - rect.left, 
+        y: touch.clientY - rect.top 
+      };
     };
 
     const handleTouchMove = (e: TouchEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
       if (!touchStartRef.current || !gameState.isPlaying) return;
+      e.preventDefault();
 
       const touch = e.touches[0];
-      const deltaX = touch.clientX - touchStartRef.current.x;
+      const rect = gameArea.getBoundingClientRect();
+      const currentX = touch.clientX - rect.left;
+      const deltaX = currentX - touchStartRef.current.x;
 
-      if (Math.abs(deltaX) > 2) { // Even more sensitive for mobile
+      if (Math.abs(deltaX) > 5) {
         setGameState((prev) => {
+          const moveSpeed = Math.abs(deltaX) > 20 ? DUSTBIN_SPEED * 3 : DUSTBIN_SPEED * 2;
           let newX = prev.dustbinX;
+          
           if (deltaX < 0) {
-            newX = Math.max(0, prev.dustbinX - DUSTBIN_SPEED * 2);
+            newX = Math.max(0, prev.dustbinX - moveSpeed);
           } else {
             newX = Math.min(
               gameDimensions.width - DUSTBIN_WIDTH,
-              prev.dustbinX + DUSTBIN_SPEED * 2
+              prev.dustbinX + moveSpeed
             );
           }
           return { ...prev, dustbinX: newX };
         });
+        
+        // Update touch start position for continuous movement
+        touchStartRef.current.x = currentX;
       }
     };
 
-    const handleTouchEnd = (e: TouchEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
+    const handleTouchEnd = () => {
       touchStartRef.current = null;
     };
 
-    // Add touch event listeners with proper options
-    gameArea.addEventListener('touchstart', handleTouchStart, { 
-      passive: false, 
-      capture: true 
-    });
-    gameArea.addEventListener('touchmove', handleTouchMove, { 
-      passive: false, 
-      capture: true 
-    });
-    gameArea.addEventListener('touchend', handleTouchEnd, { 
-      passive: false, 
-      capture: true 
-    });
+    // Add touch event listeners
+    gameArea.addEventListener('touchstart', handleTouchStart, { passive: true });
+    gameArea.addEventListener('touchmove', handleTouchMove, { passive: false });
+    gameArea.addEventListener('touchend', handleTouchEnd, { passive: true });
 
     return () => {
       gameArea.removeEventListener('touchstart', handleTouchStart);
       gameArea.removeEventListener('touchmove', handleTouchMove);
       gameArea.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [gameState.isPlaying, gameDimensions.width, gameDimensions.height]);
+  }, [gameState.isPlaying, gameDimensions.width]);
 
   // Game loop
   useEffect(() => {
@@ -553,15 +552,7 @@ const PlogRunGame: React.FC = () => {
                       </p>
                       <button
                         onClick={startGame}
-                        className="bg-green-600 hover:bg-green-700 active:bg-green-800 text-white px-4 sm:px-6 md:px-8 py-3 sm:py-3 md:py-4 rounded-lg font-semibold transition-colors flex items-center gap-2 mx-auto text-sm md:text-base touch-manipulation cursor-pointer select-none"
-                        style={{ 
-                          WebkitTapHighlightColor: 'transparent',
-                          WebkitUserSelect: 'none',
-                          userSelect: 'none',
-                          touchAction: 'manipulation'
-                        }}
-                        onTouchStart={(e) => e.stopPropagation()}
-                        onTouchEnd={(e) => e.stopPropagation()}
+                        className="mobile-button bg-green-600 hover:bg-green-700 active:bg-green-800 text-white px-8 py-4 rounded-lg font-semibold flex items-center gap-2 mx-auto text-base min-h-[56px] min-w-[180px] justify-center shadow-lg"
                       >
                         <Play className="w-4 h-4 md:w-5 md:h-5" />
                         Start Playing
@@ -592,30 +583,14 @@ const PlogRunGame: React.FC = () => {
                       <div className="flex gap-2 sm:gap-3 justify-center">
                         <button
                           onClick={startGame}
-                          className="bg-green-600 hover:bg-green-700 active:bg-green-800 text-white px-3 sm:px-4 md:px-6 py-3 rounded-lg font-semibold transition-colors flex items-center gap-1 sm:gap-2 text-xs sm:text-sm md:text-base touch-manipulation cursor-pointer select-none"
-                          style={{ 
-                            WebkitTapHighlightColor: 'transparent',
-                            WebkitUserSelect: 'none',
-                            userSelect: 'none',
-                            touchAction: 'manipulation'
-                          }}
-                          onTouchStart={(e) => e.stopPropagation()}
-                          onTouchEnd={(e) => e.stopPropagation()}
+                          className="mobile-button bg-green-600 hover:bg-green-700 active:bg-green-800 text-white px-6 py-3 rounded-lg font-semibold flex items-center gap-2 text-sm min-h-[56px] justify-center shadow-lg"
                         >
                           <Play className="w-4 h-4" />
                           Try Again
                         </button>
                         <button
                           onClick={resetGame}
-                          className="bg-gray-600 hover:bg-gray-700 active:bg-gray-800 text-white px-3 sm:px-4 md:px-6 py-3 rounded-lg font-semibold transition-colors flex items-center gap-1 sm:gap-2 text-xs sm:text-sm md:text-base touch-manipulation cursor-pointer select-none"
-                          style={{ 
-                            WebkitTapHighlightColor: 'transparent',
-                            WebkitUserSelect: 'none',
-                            userSelect: 'none',
-                            touchAction: 'manipulation'
-                          }}
-                          onTouchStart={(e) => e.stopPropagation()}
-                          onTouchEnd={(e) => e.stopPropagation()}
+                          className="mobile-button bg-gray-600 hover:bg-gray-700 active:bg-gray-800 text-white px-6 py-3 rounded-lg font-semibold flex items-center gap-2 text-sm min-h-[56px] justify-center shadow-lg"
                         >
                           <RotateCcw className="w-4 h-4" />
                           Reset
